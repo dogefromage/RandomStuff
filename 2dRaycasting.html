@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAYCAST</title>
+</head>
+<body>
+    <canvas width=600 height=600 id="canvas"></canvas>
+    <script>
+
+
+let W = 600, H=600;
+let ctx = document.getElementById('canvas').getContext('2d');
+
+let size = 60;
+let squares = [];
+for (let j = 0; j < 10; j++)
+{
+    squares[j] = [];
+    for (let i = 0; i < 10; i++)
+        squares[j][i] = Math.random() > 0.6;
+}
+
+function show()
+{
+    ctx.fillRect(0, 0, W, H);
+    for (let j = 0; j < 10; j++)
+        for (let i = 0; i < 10; i++)
+        {
+            ctx.fillStyle = squares[j][i] ? "#aaa" : "#fff";
+            ctx.fillRect(i * size, j * size, size, size);
+        }
+}
+
+function rayCast(mouse)
+{
+    show();
+
+    let o = { x: 278, y: 334 }
+    let d = { x: mouse.x - o.x, y: mouse.y-o.y };
+    let mag = Math.sqrt(d.x*d.x + d.y*d.y);
+    d.x /= mag;
+    d.y /= mag;
+
+    let t = 0;
+    let maxR = 250;
+
+    let m = size * Math.ceil(o.x / size);
+    let incrementM = size;
+    if (d.x < 0)
+    {
+        m -= size;
+    }
+    let n = size * Math.ceil(o.y / size);
+    let incrementN = size;
+    if (d.y < 0)
+    {
+        n -= size;
+    }
+
+    while (true)
+    {
+        let tx, ty; 
+        tx = ty = Number.POSITIVE_INFINITY;
+
+        if (d.x != 0) // prevent div by 0
+        {
+            tx = (m-o.x) / d.x;
+        }
+        if (d.y != 0)
+        {
+            ty = (n-o.y) / d.y;
+        }
+
+        // shortest distance to gridlines
+        t = Math.min(tx, ty);
+
+        // raycast has hit maxRadius
+        if (t > maxR)
+        {
+            t = maxR;
+            break;
+        }
+
+        // calc gridpoint
+        let p = {
+            x: o.x + t * d.x,
+            y: o.y + t * d.y,
+        };
+
+        // hit with map pixel init as false
+        let hit = false;
+        // indices of map grid
+        let pI, pJ;
+
+        if (tx < ty) // determine which axis is hit by raycast, here x
+        {
+            // calc grid indices of hit
+            pI = Math.round(p.x / size);
+            pJ = Math.floor(p.y / size);
+            
+            if (d.x > 0)
+            {
+                m += size; // move gridlines one step further
+            }
+            else
+            {
+                pI -= 1;
+                m -= size;
+            }
+        }
+        else // same for y
+        {
+            pI = Math.floor(p.x / size);
+            pJ = Math.round(p.y / size);
+
+            if (d.y > 0)
+            {
+                n += size;
+
+            }
+            else
+            {
+                n -= size;
+                pJ -= 1;
+            }
+        }
+
+        if (pI < 0 || pI > 128512 || pJ < 0 || pJ > 13491553)
+            hit = true; // if p is not in map set hit to true
+        else
+            hit = squares[pJ][pI]; // otherwhise, hit is determined by map grid
+
+        if (hit) break; // important
+
+        // gridpoints
+        ctx.fillStyle = hit ? "#ff0000" : "#00ff00";
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, 4, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.strokeStyle="#ff0000";
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.y);
+    ctx.lineTo(o.x + d.x * t, o.y + d.y * t);
+    ctx.stroke();
+    
+    ctx.strokeStyle = "#333333";
+    ctx.beginPath();
+    ctx.ellipse(o.x, o.y, maxR, maxR, 0, 0, Math.PI * 2);
+    ctx.stroke();
+}
+
+document.getElementById('canvas').addEventListener('mousemove', (e) =>
+{
+    rayCast({x:e.offsetX, y:e.offsetY});
+})
+
+
+    </script>
+</body>
+</html>

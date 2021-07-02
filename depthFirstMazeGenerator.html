@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>maze</title>
+</head>
+<body>
+    <canvas width=600 height=600 id="canvas"></canvas>
+<script>
+
+const ctx = document.getElementById('canvas').getContext('2d');
+const w = 600;
+const h = 600;
+const W = 100;
+const H = 100;
+
+const moves = [];
+const fields = [];
+
+for (let y = 0; y < H; y++)
+{
+    fields[y] = [];
+    for (let x = 0; x < W; x++)
+    {
+        fields[y][x] = false;
+    }
+}
+
+
+function depthfirst(x, y)
+{
+    fields[y][x] = true;
+    moves.push({ x, y });
+    
+    let nbs = searchNeighbours(x, y)
+    
+    while (nbs.length > 0)
+    {
+        let r = Math.floor(Math.random() * nbs.length);
+        let nb = nbs[r];
+
+        let mx = (x + nb.x) / 2;
+        let my = (y + nb.y) / 2;
+        fields[my][mx] = true;
+        moves.push({ x: mx, y: my });
+        depthfirst(nb.x, nb.y);
+
+        nbs = searchNeighbours(x, y);
+    }
+}
+depthfirst(1, 1);
+
+
+let fields2 = [];
+
+for (let y = 0; y < H; y++)
+{
+    fields2[y] = [];
+    for (let x = 0; x < W; x++)
+    {
+        fields2[y][x] = fields[y][x];
+        fields[y][x] = false;
+    }
+}
+depthfirst(1, 1);
+
+
+function draw()
+{
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
+
+    for (let y = 0; y < H; y++)
+    {
+        for (let x = 0; x < W; x++)
+        {
+            let c1 = fields[y][x];
+            let c2 = fields2[y][x];
+            let color = c1;
+            ctx.fillStyle = color ? "#ffffff" : "#000000";
+            ctx.fillRect(5 * x, 5 * y, 5, 5);
+        }
+    }
+}
+draw();
+
+
+function searchNeighbours(x, y)
+{
+    let nbs = [];
+    
+    // LEFT
+    if (x - 2 >= 0)
+    {
+        if (!fields[y][x - 2])
+        {
+            nbs.push({ x: x - 2, y: y });
+        }
+    }
+
+    // RIGHT
+    if (x + 2 < W)
+    {
+        if (!fields[y][x + 2])
+        {
+            nbs.push({ x: x + 2, y: y });
+        }
+    }
+    
+    // TOP
+    if (y - 2 >= 0)
+    {
+        if (!fields[y - 2][x])
+        {
+            nbs.push({ x: x, y: y - 2 });
+        }
+    }
+
+    // BOTTOM
+    if (y + 2 < H)
+    {
+        if (!fields[y + 2][x])
+        {
+            nbs.push({ x: x, y: y + 2 });
+        }
+    }
+
+    return nbs;
+}
+
+// drawMaze();
+function drawMaze()
+{
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
+
+    let interval = setInterval(() =>
+    {
+        const move = moves.shift();
+        if (!move)
+        {
+            clearInterval(interval);
+            return;
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(5 * move.x, 5 * move.y, 5, 5);
+    }, 1);
+}
+
+</script>
+</body>
+</html>

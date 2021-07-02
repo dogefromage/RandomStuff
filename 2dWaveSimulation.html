@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waves</title>
+</head>
+<body>
+    <canvas id=canvas width=800 height=800></canvas>
+    <script>
+
+
+const ctx = canvas.getContext('2d');
+
+
+let player = {
+    x: 400,
+    y: 400,
+};
+
+let lastPlayerPos = {
+    x: 400,
+    y: 400,
+}
+
+// init wave
+const N = 800;
+const W = 800;
+const H = 800;
+
+let wavePosition = new Float32Array(N * N);
+let waveVelocity = new Float32Array(N * N);
+for (let i = 0; i < N * N; i++)
+{
+    wavePosition[i] = 0;
+    waveVelocity[i] = 0;
+
+    // if (Math.random() > 0.99)
+    // {
+    //     wavePosition[i] = Math.random() * 2 - 1;
+    // }
+}
+
+const dt = 0.005;
+
+setInterval(() =>
+{
+    // user input
+    let vx = (d ? 1 : 0) - (a ? 1 : 0);
+    let vy = (s ? 1 : 0) - (w ? 1 : 0);
+    const speed = 400;
+    player.x += vx * speed * dt;
+    player.y += vy * speed * dt;
+
+    // spawn wave
+    if (Math.hypot(lastPlayerPos.x - player.x, lastPlayerPos.y - player.y) > 150)
+    {
+        lastPlayerPos.x = player.x;
+        lastPlayerPos.y = player.y;
+
+        for (let x = 0; x < 20; x++)
+        {
+            for (let y = 0; y < 20; y++)
+            {
+                let i = N * (Math.floor(player.y) + y) + Math.floor(player.x) + x;
+
+                let intensityX = Math.exp(-0.05 * (x - 10)**2);
+                let intensityY = Math.exp(-0.05 * (y - 10)**2);
+
+                wavePosition[i] = intensityX * intensityY;
+            }
+        }
+    }    
+
+    // update waves
+    for (let i = 0; i < N * N; i++)
+    {
+        let x = i % N;
+        let y = Math.floor(i / N);
+        let edgePixel = x == 0 || y == 0 || x == W - 1 || y == H - 1;
+
+        if (edgePixel)
+        {
+            wavePosition[i] = 0;
+            waveVelocity[i] = 0;
+        }
+        else
+        {
+            // apply wave equation
+            // acceleration of surface is proportional to its displacement or 2nd derivative
+
+            let deltaDeltaX = (wavePosition[i + 1] - wavePosition[i]) - (wavePosition[i] - wavePosition[i - 1]);
+
+            let deltaDeltaY = (wavePosition[i + N] - wavePosition[i]) - (wavePosition[i] - wavePosition[i - N]);
+
+            // second derivative of surface
+            let der = deltaDeltaX + deltaDeltaY;
+            const cc = 10000;
+
+            // acceleration
+            let a = cc * der;
+
+            waveVelocity[i] += a * dt;
+            
+            // damping
+            waveVelocity[i] *= 0.99;
+        }
+    }
+
+    for (let i = 0; i < N * N; i++)
+    {
+        wavePosition[i] += waveVelocity[i] * dt;
+    }
+
+    // draw waves
+    let data = ctx.getImageData(0, 0, W, H);
+    for (let i = 0; i < N * N; i++)
+    {
+        let value = 127 * (wavePosition[i] + 1)
+        data.data[4 * i + 0] = value;
+        data.data[4 * i + 1] = value;
+        data.data[4 * i + 2] = value;
+        data.data[4 * i + 3] = 255;
+    }
+    ctx.putImageData(data, 0, 0);
+    
+    // draw player
+    ctx.fillStyle = 'red';
+    ctx.fillRect(player.x, player.y, 20, 20);
+
+}, dt * 1000);
+
+
+let w,a,s,d;
+document.addEventListener('keydown', (e) =>
+{
+    if (e.code == 'KeyW')
+        w = true;
+    if (e.code == 'KeyA')
+        a = true;
+    if (e.code == 'KeyS')
+        s = true;
+    if (e.code == 'KeyD')
+        d = true;
+});
+
+document.addEventListener('keyup', (e) =>
+{
+    if (e.code == 'KeyW')
+        w = false;
+    if (e.code == 'KeyA')
+        a = false;
+    if (e.code == 'KeyS')
+        s = false;
+    if (e.code == 'KeyD')
+        d = false;
+});
+
+
+    </script>
+</body>
+</html>
